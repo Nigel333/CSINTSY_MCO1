@@ -23,15 +23,15 @@ public class SokoBot {
     this.width = width;
     this.height = height;
     this.mapData = mapData;
-    this.itemsData = itemsData;
-    this.posPlayer = PosOfPlayer();
-    this.posBoxes = PosOfBoxes();
+    this.itemsData = itemsData;  
     this.posWalls = PosOfWalls();
     this.posGoals = PosOfGoals();
 
     posPlayer = PosOfPlayer();
     posBoxes = PosOfBoxes();
-    return aStarSearch(posPlayer, posBoxes);
+    String finalans = aStarSearch(posPlayer, posBoxes);
+    //System.out.println("Final Answer: " + finalans);
+    return finalans;
   }
 
   private int[] PosOfPlayer() {
@@ -225,25 +225,31 @@ public class SokoBot {
 
           for (int[] pattern : allPatterns) {
               List<int[]> newBoard = new ArrayList<>();
+              
               for (int index : pattern) {
                   newBoard.add(Arrays.copyOf(board[index], board[index].length));
               }
 
               if (isWall(newBoard.get(1)) && isWall(newBoard.get(5))) {
-                  System.out.println("failed 1");
+                  //System.out.println("failed 1");
                   return true;
-              } else if (isBox(newBoard.get(1)) && isWall(newBoard.get(2)) && isWall(newBoard.get(5))) {
-                  System.out.println("failed 2");
+              } else if (isBox(newBoard.get(1), posBoxes) && isWall(newBoard.get(2)) && isWall(newBoard.get(5))) {
+                  //System.out.println("failed 2");
                   return true;
-              } else if (isBox(newBoard.get(1)) && isWall(newBoard.get(2)) && isBox(newBoard.get(5))) {
-                  System.out.println("failed 3");
+              } else if (isBox(newBoard.get(1), posBoxes) && isWall(newBoard.get(2)) && isBox(newBoard.get(5), posBoxes)) {
+                  //System.out.println("failed 3");
                   return true;
-              } else if (isBox(newBoard.get(1)) && isBox(newBoard.get(2)) && isBox(newBoard.get(5))) {
-                  System.out.println("failed 4");
+              } else if (isBox(newBoard.get(1), posBoxes) && isBox(newBoard.get(2), posBoxes) && isBox(newBoard.get(5), posBoxes)) {
+                  //System.out.println("failed 4");
+                  /*
+                   * System.err.println("[" + newBoard.get(0)[0] + "," + newBoard.get(0)[1] + "], [" + newBoard.get(1)[0] + "," + newBoard.get(1)[1] + "], [" + newBoard.get(2)[0] + "," + newBoard.get(2)[1] + "]\n"
+                  + "[" + newBoard.get(3)[0] + "," + newBoard.get(3)[1] + "], [" + newBoard.get(4)[0] + "," + newBoard.get(4)[1] + "], [" + newBoard.get(5)[0] + "," + newBoard.get(5)[1] + "]\n" 
+                  + "[" + newBoard.get(6)[0] + "," + newBoard.get(6)[1] + "], [" + newBoard.get(7)[0] + "," + newBoard.get(7)[1] + "], [" + newBoard.get(8)[0] + "," + newBoard.get(8)[1] + "]\n");
+                   */                  
                   return true;
-              } else if (isBox(newBoard.get(1)) && isBox(newBoard.get(6)) && isWall(newBoard.get(2))
+              } else if (isBox(newBoard.get(1), posBoxes) && isBox(newBoard.get(6), posBoxes) && isWall(newBoard.get(2))
                       && isWall(newBoard.get(3)) && isWall(newBoard.get(8))) {
-                  System.out.println("failed 5"); 
+                  //System.out.println("failed 5"); 
                   return true;
               }
           }
@@ -260,7 +266,7 @@ public class SokoBot {
       return Arrays.stream(posWalls).anyMatch(wall -> Arrays.equals(wall, pos));
   }
 
-  private boolean isBox(int[] pos) {
+  private boolean isBox(int[] pos, int[][] posBoxes) {
       return Arrays.stream(posBoxes).anyMatch(box -> Arrays.equals(box, pos));
   }
 
@@ -362,28 +368,32 @@ public class SokoBot {
   private String aStarSearch(int[] beginPlayer, int[][] beginBoxes) {
     State startState = new State(beginPlayer, beginBoxes, heuristic(beginPlayer, beginBoxes));
     MyPriorityQueue<State> frontier = new MyPriorityQueue<>();
-    frontier.push(startState, startState.getHCost());
+    frontier.push(startState, heuristic(beginPlayer, beginBoxes));
 
-    HashMap<Integer, State> explored = new HashMap<>();
+    List <State> explored = new ArrayList<>();
+
     MyPriorityQueue<String> actions = new MyPriorityQueue<>();
     actions.push("", heuristic(beginPlayer, beginBoxes));
 
     while (!frontier.isEmpty()) {
       State currentState = frontier.pop();
       String currentAction = actions.pop();
-      int playerHash = Arrays.hashCode(currentState.getPlayer());
 
-      System.out.println("currentState: " + currentState.getPlayer()[0] + " " + currentState.getPlayer()[1]);
-      System.out.println("currentAction: " + currentAction);
+      /*
+       * System.out.println("currentState: " + currentState.getPlayer()[0] + " " + currentState.getPlayer()[1]);
+        System.out.println("currentAction: " + currentAction + "| Heuristic:  " + currentState.getHCost());
+       */
+      
       
 
       if (isEndState(currentState.getBoxes())) {
-          return actions.pop();
+          //System.out.println("Final Action: " + currentAction );
+          return currentAction.toLowerCase();
           
       }
 
-      if (!explored.containsKey(playerHash)) {
-        explored.put(playerHash, currentState);
+      if (!explored.contains(currentState)) {
+        explored.add(currentState);
         int currentCost = cost(currentAction);
       
         String[][] legalMoves = legalMoves(currentState.getPlayer(), currentState.getBoxes());
@@ -400,25 +410,26 @@ public class SokoBot {
            
            
             /*
-            System.out.println(updatedBoxes[0][0] + " " + updatedBoxes[0][1] + "\n" + updatedBoxes[1][0] + " " + updatedBoxes[1][1] 
-            + "\n" + updatedBoxes[2][0] + " " + updatedBoxes[2][1] + "\n" + updatedBoxes[3][0] + " " + updatedBoxes[3][1] + "\n" 
-          );     
-          */
-         
+             * System.out.println(updatedBoxes[0][0] + " " + updatedBoxes[0][1] + "\n" + updatedBoxes[1][0] + " " + updatedBoxes[1][1] 
+              + "\n" + updatedBoxes[2][0] + " " + updatedBoxes[2][1] + "\n" + updatedBoxes[3][0] + " " + updatedBoxes[3][1] + "\n" 
+              );     
+             */
+            
           if(isFailed(updatedBoxes)){
-            System.out.println("Failed");
+            //System.err.println("\n Failed state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
+          
             continue;
           }
           int heuristic = heuristic(updatedPlayer, updatedBoxes);
           State nextState = new State(updatedPlayer, updatedBoxes, heuristic + currentCost);
-          System.err.println("\n chosen state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| COST: " + (heuristic + currentCost) + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
+          //System.err.println("\n Potential action: " + currentAction + action[2] + "  Potential state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| COST: " + (heuristic + currentCost) + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
           frontier.push(nextState, nextState.getHCost());
           actions.push(currentAction + action[2], heuristic + currentCost);
-         
           
         }
       }
     }
+    System.err.println("no solution found");
     return "";
   }
 
