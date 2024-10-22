@@ -24,63 +24,57 @@ public class SokoBot {
     this.height = height;
     this.mapData = mapData;
     this.itemsData = itemsData;  
-    this.posWalls = PosOfWalls();
-    this.posGoals = PosOfGoals();
-
-    posPlayer = PosOfPlayer();
-    posBoxes = PosOfBoxes();
-    String finalans = aStarSearch(posPlayer, posBoxes);
-    //System.out.println("Final Answer: " + finalans);
-    return finalans;
+    gatherPositions();
+    
+    return aStarSearch(posPlayer, posBoxes);
   }
 
-  private int[] PosOfPlayer() {
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            if (itemsData[i][j] == '@' || itemsData[i][j] == '+') {
-                return new int[]{i, j};
-            }
-        }
-    }
-    return null; 
-  }
-
-  private int[][] PosOfBoxes() {
+  /* 
+   * This method is used to gather the positions of the player, boxes, walls, and goals
+   *  and assign them to the global variables posPlayer, posBoxes, posWalls, and posGoals
+   * 
+   *  @param: none
+   *  @return: none
+   */
+  private void gatherPositions() {
     List<int[]> boxes = new ArrayList<>();
+    List<int[]> walls = new ArrayList<>();
+    List<int[]> goals = new ArrayList<>();
+
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            if (itemsData[i][j] == '$' || itemsData[i][j] == '*') {
+            char item = itemsData[i][j];
+            char map = mapData[i][j];
+
+            if (item == '@' || item == '+') {
+                posPlayer = new int[]{i, j};
+            }
+
+            if (item == '$' || item == '*') {
                 boxes.add(new int[]{i, j});
             }
-        }
-    }
-    return boxes.toArray(new int[0][]);
-  }
 
-  private int[][] PosOfWalls() {
-    List<int[]> walls = new ArrayList<>();
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            if (mapData[i][j] == '#') {
+            if (map == '#') {
                 walls.add(new int[]{i, j});
             }
-        }
-    }
-    return walls.toArray(new int[0][]);
-  }
 
-  private int[][] PosOfGoals() {
-    List<int[]> goals = new ArrayList<>();
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            if (mapData[i][j] == '.' || itemsData[i][j] == '*') {
+            if (map == '.' || item == '*') {
                 goals.add(new int[]{i, j});
             }
         }
     }
-    return goals.toArray(new int[0][]);
+
+    posBoxes = boxes.toArray(new int[0][]);
+    posWalls = walls.toArray(new int[0][]);
+    posGoals = goals.toArray(new int[0][]);
   }
 
+  /*
+   * this method checks if the current state is the end state
+   *  
+   *  @param posBoxes: the current position of the boxes
+   *  @return boolean: true if the goalcount is equal to the number of goals
+   */
   private boolean isEndState(int[][] posBoxes){
     Set<String> boxSet = new HashSet<>();
     for (int[] box : posBoxes) {
@@ -98,6 +92,18 @@ public class SokoBot {
     return goalCount == posGoals.length;
   }
 
+  /*
+   * This method checks if the action is a legal move. 
+   * It first checks if the action is a push or move,
+   * then it uses the isPositionLegal method to check 
+   * if the position is legal.
+   * 
+   * @param action: the action to be checked
+   * @param posPlayer: the current position of the player
+   * @param posBoxes: the current position of the boxes
+   * 
+   * @return boolean: true if the move is legal
+   */
   private Boolean isLegalMove(String[] action, int[] posPlayer, int[][] posBoxes) {
     int xplayer = posPlayer[0];
     int yplayer = posPlayer[1];
@@ -114,6 +120,17 @@ public class SokoBot {
     }
     return isPositionLegal(x, y, posBoxes);
   }
+
+  /*
+   * This method checks if the position is legal by
+   * checking if the position is a box or a wall
+   * 
+   * @param x: the x coordinate 
+   * @param y: the y coordinate 
+   * @param posBoxes: the current position of the boxes
+   * 
+   * @return boolean: true if the position is legal
+   */
   private boolean isPositionLegal(int x, int y, int[][] posBoxes) {
     for (int[] box : posBoxes) {
         if (box[0] == x && box[1] == y) {
@@ -129,6 +146,17 @@ public class SokoBot {
     return true;
   }
 
+  /*
+   * This method returns the legal moves of the player.
+   * generates all possible moves (up, down, left, right),
+   * checks if it is a push or move and adjust the actions 
+   * arraylist, and finally checks if it is a legal move.
+   * 
+   * @param posPlayer: the current position of the player
+   * @param posBoxes: the current position of the boxes
+   * 
+   * @return String[][]: the legal moves of the player
+   */
   private String[][] legalMoves(int[] posPlayer, int[][] posBoxes){
     ArrayList<String[]> actions = new ArrayList<>();
     actions.add(new String[]{"-1", "0", "u", "U"});
@@ -167,6 +195,16 @@ public class SokoBot {
     return legalMoves.toArray(new String[0][]);
   }
 
+  /*
+   * This method checks if there is a box in the
+   * given coordinates
+   * 
+   * @param x1: the x coordinate
+   * @param y1: the y coordinate 
+   * @param posBox: the current position of the boxes
+   * 
+   * @return boolean: true if there is a box 
+   */
   private boolean isInPosBox(int x1, int y1, int[][] posBox) {
     for (int[] box : posBox) {
         if (box[0] == x1 && box[1] == y1) {
@@ -176,6 +214,17 @@ public class SokoBot {
     return false; 
 }
 
+  /*
+   * This method updates the state of the player and the boxes
+   * by checking if the action is a push or move, then it updates
+   * the position of the player and the boxes accordingly.
+   * 
+   * @param posPlayer: the current position of the player
+   * @param posBoxes: the current position of the boxes
+   * @param action: the action to be taken
+   * 
+   * @return Object[]: an array of the updated position of the player and the boxes
+   */
   private Object[] updateState(int[] posPlayer, int[][] posBoxes, String[] action){
     int xplayer = posPlayer[0];
     int yplayer = posPlayer[1];
@@ -198,22 +247,36 @@ public class SokoBot {
     return new Object[]{updatedPosPlayer, updatedPosBoxes};
   } 
   
+  /*
+   * This method checks if the state is failed by checking
+   * if the boxes are in a failed state. it usses the rotateFlipPattern
+   * as basis so the index of failed states does not need to be changed 
+   * per iteration.
+   * 
+   * Failed state 1: there is a box to the top and a wall on the right
+   * Failed state 2: there is a box to the top and a wall on the top right and right
+   * Failed state 3: there is a box to the top and to the right and a wall on the top right
+   * Failed state 4: there is a box to the top, to the top right, and to the right
+   * Failed state 5: there is a box to the top and to the bottom left; and a wall to the top right, left, and bottom right
+   * 
+   * @param posBoxes: the current position of the boxes
+   * 
+   * @return boolean: true if the state is failed
+   */
   private boolean isFailed(int[][] posBoxes){
-    int[][] rotatePattern = {
+    int[][] rotateFlipPattern = {
       {0, 1, 2, 3, 4, 5, 6, 7, 8},
       {2, 5, 8, 1, 4, 7, 0, 3, 6},
       {8, 7, 6, 5, 4, 3, 2, 1, 0}, 
-      {6, 3, 0, 7, 4, 1, 8, 5, 2}  
-    };
-    int[][] flipPattern = {
+      {6, 3, 0, 7, 4, 1, 8, 5, 2},
       {2, 1, 0, 5, 4, 3, 8, 7, 6},
       {0, 3, 6, 1, 4, 7, 2, 5, 8},
       {6, 7, 8, 3, 4, 5, 0, 1, 2}, 
       {8, 5, 2, 7, 4, 1, 6, 3, 0}  
     };
     List<int[]> allPatterns = new ArrayList<>();
-    allPatterns.addAll(Arrays.asList(rotatePattern));
-    allPatterns.addAll(Arrays.asList(flipPattern));
+    allPatterns.addAll(Arrays.asList(rotateFlipPattern));
+    
 
     for (int[] box : posBoxes) {
       if (!isGoal(box)) {
@@ -258,22 +321,54 @@ public class SokoBot {
     }
     return false;
   }
+
+  /*
+   * This method checks if the given position (box) is in the goal
+   * 
+   * @param pos: the current position of the box
+   * 
+   * @return boolean: true if the box is in the goal
+   */
   private boolean isGoal(int[] pos) {
     return Arrays.stream(posGoals).anyMatch(goal -> Arrays.equals(goal, pos));
   }
 
+  /*
+   * This method checks if the given position is a wall
+   * 
+   * @param pos: the current position
+   * 
+   * @return boolean: true if the position is a wall
+   */
   private boolean isWall(int[] pos) {
       return Arrays.stream(posWalls).anyMatch(wall -> Arrays.equals(wall, pos));
   }
 
+  /*
+   * This method checks if the given position is a box
+   * 
+   * @param pos: the current position
+   * @param posBoxes: the current position of the boxes
+   * 
+   * @return boolean: true if the position is a box
+   */
   private boolean isBox(int[] pos, int[][] posBoxes) {
       return Arrays.stream(posBoxes).anyMatch(box -> Arrays.equals(box, pos));
   }
 
-
+  /*
+   * This method calculates the heuristic of the current state
+   * by calculating the distance of the boxes to the goals.
+   * It starts by sorting the box and goals then it 
+   * calculates the distance of the boxes to the goals.
+   * 
+   * @param posPlayer: the current position of the player
+   * @param posBoxes: the current position of the boxes
+   * 
+   * @return int: the heuristic of the current state
+   */
   private int heuristic(int[] posPlayer, int[][] posBoxes){
     int distance = 0;
-    int[][] completes = getCompletes(posGoals, posBoxes);
 
     Set<String> posBoxSet = new HashSet<>();
     for (int[] box : posBoxes) {
@@ -283,15 +378,7 @@ public class SokoBot {
     for (int[] goal : posGoals) {
         posGoalSet.add(goal[0] + "," + goal[1]); 
     }
-    Set<String> completeSet = new HashSet<>();
-    for (int[] complete : completes) {
-        completeSet.add(complete[0] + "," + complete[1]); 
-    }
    
-
-    posBoxSet.removeAll(completeSet);
-    posGoalSet.removeAll(completeSet);
-
     List<String> sortposBox = new ArrayList<>(posBoxSet);
     List<String> sortposGoal = new ArrayList<>(posGoalSet);
 
@@ -324,53 +411,31 @@ public class SokoBot {
 
     return distance;
   }
-
-  private static int[][] getCompletes(int[][] posGoals, int[][] posBoxes) {
-    Set<String> goalSet = new HashSet<>();
-    Set<String> boxSet = new HashSet<>();
-
-    for (int[] goal : posGoals) {
-        goalSet.add(Arrays.toString(goal));
-    }
-    for (int[] box : posBoxes) {
-        boxSet.add(Arrays.toString(box));
-    }
-
-    goalSet.retainAll(boxSet);
-    
-    List<int[]> completeList = new ArrayList<>();
-
-    
-    for (String goal : goalSet) {
-        goal = goal.replaceAll("[\\[\\] ]", ""); 
-        String[] coords = goal.split(",");
-        completeList.add(new int[]{Integer.parseInt(coords[0]), Integer.parseInt(coords[1])});
-    }
-    //System.err.println(Arrays.deepToString(completeList.toArray(new int[0][])));
-    return completeList.toArray(new int[completeList.size()][]);
   
-  }
-
-  private int cost(String currentAction) {
-    int count = 0;
-  
-    for (int i = 0; i < currentAction.length(); i++) {
-      char action = currentAction.charAt(i);
-      if (Character.isLowerCase(action)) { 
-        count++;
-    }
-    }
-    
-    return count;
-  }
-
-  
+ 
+  /*
+   * This method is the main method for the A* search algorithm.
+   * It starts by creating the start state and pushing it to the frontier.
+   * Then it creates a map of the explored states and a priority queue for the actions.
+   * It then loops through the frontier and pops the current state and action.
+   * If the current state is the end state, it returns the action.
+   * If the current state is already explored, it skips it.
+   * It then generates the legal moves and updates the state accordingly.
+   * If the state is failed, it skips that state.
+   * It then calculates the heuristic of the updated state and updates the frontier 
+   * and action queues.
+   * 
+   * @param beginPlayer: the starting position of the player
+   * @param beginBoxes: the starting position of the boxes
+   * 
+   * @return String: the action to be taken
+   */
   private String aStarSearch(int[] beginPlayer, int[][] beginBoxes) {
     State startState = new State(beginPlayer, beginBoxes, heuristic(beginPlayer, beginBoxes));
     MyPriorityQueue<State> frontier = new MyPriorityQueue<>();
     frontier.push(startState, heuristic(beginPlayer, beginBoxes));
 
-    List <State> explored = new ArrayList<>();
+    Map<State, Integer> explored = new HashMap<>();
 
     MyPriorityQueue<String> actions = new MyPriorityQueue<>();
     actions.push("", heuristic(beginPlayer, beginBoxes));
@@ -392,48 +457,53 @@ public class SokoBot {
           
       }
 
-      if (!explored.contains(currentState)) {
-        explored.add(currentState);
-        int currentCost = cost(currentAction);
+      if (explored.containsKey(currentState) && explored.get(currentState) <= currentAction.length()) {
+        continue;
+      }
+      explored.put(currentState, currentAction.length());
+      int currentCost = currentAction.length();
+    
+      String[][] legalMoves = legalMoves(currentState.getPlayer(), currentState.getBoxes());
+      /* 
+        for(int i = 0; i < legalMoves.length; i++){
+        System.err.println("Legal Moves: " + legalMoves[i][0] + " " + legalMoves[i][1] + " " + legalMoves[i][2]);
+      }
+      */
       
-        String[][] legalMoves = legalMoves(currentState.getPlayer(), currentState.getBoxes());
-        /* 
-         for(int i = 0; i < legalMoves.length; i++){
-          System.err.println("Legal Moves: " + legalMoves[i][0] + " " + legalMoves[i][1] + " " + legalMoves[i][2]);
-        }
-        */
+      for (String[] action : legalMoves) {
+        Object[] updatedState = updateState(currentState.getPlayer(), currentState.getBoxes(), action);
+        int[] updatedPlayer = (int[]) updatedState[0];
+        int[][] updatedBoxes = (int[][]) updatedState[1];
+          
+          
+          /*
+            * System.out.println(updatedBoxes[0][0] + " " + updatedBoxes[0][1] + "\n" + updatedBoxes[1][0] + " " + updatedBoxes[1][1] 
+            + "\n" + updatedBoxes[2][0] + " " + updatedBoxes[2][1] + "\n" + updatedBoxes[3][0] + " " + updatedBoxes[3][1] + "\n" 
+            );     
+            */
+          
+        if(isFailed(updatedBoxes)){
+          //System.err.println("\n Failed state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
         
-        for (String[] action : legalMoves) {
-          Object[] updatedState = updateState(currentState.getPlayer(), currentState.getBoxes(), action);
-          int[] updatedPlayer = (int[]) updatedState[0];
-          int[][] updatedBoxes = (int[][]) updatedState[1];
-           
-           
-            /*
-             * System.out.println(updatedBoxes[0][0] + " " + updatedBoxes[0][1] + "\n" + updatedBoxes[1][0] + " " + updatedBoxes[1][1] 
-              + "\n" + updatedBoxes[2][0] + " " + updatedBoxes[2][1] + "\n" + updatedBoxes[3][0] + " " + updatedBoxes[3][1] + "\n" 
-              );     
-             */
-            
-          if(isFailed(updatedBoxes)){
-            //System.err.println("\n Failed state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
-          
-            continue;
-          }
-          int heuristic = heuristic(updatedPlayer, updatedBoxes);
-          State nextState = new State(updatedPlayer, updatedBoxes, heuristic + currentCost);
-          //System.err.println("\n Potential action: " + currentAction + action[2] + "  Potential state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| COST: " + (heuristic + currentCost) + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
-          frontier.push(nextState, nextState.getHCost());
-          actions.push(currentAction + action[2], heuristic + currentCost);
-          
+          continue;
         }
+        int heuristic = heuristic(updatedPlayer, updatedBoxes);
+        State nextState = new State(updatedPlayer, updatedBoxes, heuristic + currentCost);
+        //System.err.println("\n Potential action: " + currentAction + action[2] + "  Potential state: " + updatedPlayer[0] + "," + updatedPlayer[1] + "| COST: " + (heuristic + currentCost) + "| From: " + currentState.getPlayer()[0] + "," + currentState.getPlayer()[1]);
+        frontier.push(nextState, nextState.getHCost());
+        actions.push(currentAction + action[2], heuristic + currentCost);
+          
+        
       }
     }
     System.err.println("no solution found");
     return "";
   }
 
-
+  /*
+   * This class is used to store the state of the player, boxes, and the heuristic cost
+   * has methods that compare the states and hash the states
+   */
   private class State{
     private int[] player;
     private int[][] boxes;
@@ -471,6 +541,12 @@ public class SokoBot {
     }
   }
 
+  /*
+   * This class is used to create a custom priority queue for the states
+   * has methods to push, pop the states and check if the queue is empty. 
+   * Automatically sorts the states
+   * when pushed
+   */
   public class MyPriorityQueue<T> {
     private List<PriorityItem<T>> heap;
     private int count;
