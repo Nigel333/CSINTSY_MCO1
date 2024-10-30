@@ -369,7 +369,9 @@ public class SokoBot {
    */
   private int heuristic(int[] posPlayer, int[][] posBoxes){
     int distance = 0;
-
+    int tempdist = 0;
+    int minDist = Integer.MAX_VALUE;
+    
     Set<String> posBoxSet = new HashSet<>();
     for (int[] box : posBoxes) {
         posBoxSet.add(box[0] + "," + box[1]); 
@@ -400,14 +402,15 @@ public class SokoBot {
     System.out.println("Complete Set: " + completeSet);
      */
     
-    if (finalSortPosBox.length != finalSortPosGoal.length) {
-      throw new IllegalArgumentException("Arrays must be of the same length");
-  }
-
-  for (int i = 0; i < finalSortPosBox.length; i++) {
-      distance += Math.abs(finalSortPosBox[i][0] - finalSortPosGoal[i][0]) +
-                  Math.abs(finalSortPosBox[i][1] - finalSortPosGoal[i][1]);
-  }
+    for (int i = 0; i < finalSortPosBox.length; i++) {
+      for (int j = 0; j < finalSortPosGoal.length; j++) {
+        tempdist += Math.abs(finalSortPosBox[i][0] - finalSortPosGoal[i][0]) +
+                    Math.abs(finalSortPosBox[i][1] - finalSortPosGoal[i][1]);
+        minDist = Math.min(minDist, tempdist);
+      }
+      distance += minDist;
+    }
+  
 
     return distance;
   }
